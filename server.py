@@ -4,6 +4,7 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from linked_list import *
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sqlitedb_user_blog.file"
@@ -55,7 +56,16 @@ def create_user():
 
 @app.route("/user/descending_id", methods=["GET"])
 def get_all_users_descending():
-    pass
+    users = User.query.all()
+    all_users_ll = LinkedList()
+    for user in users:
+        all_users_ll.insert_beginning({
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "address": user.address,
+            })
+    return jsonify(all_users_ll.to_list()), 200
 
 @app.route("/user/ascending_id", methods=["GET"])
 def get_all_users_ascending():
@@ -86,5 +96,5 @@ def delete_blog_post(blog_post_id):
     pass
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5002)
 
