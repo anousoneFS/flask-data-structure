@@ -39,12 +39,18 @@ class LinkedList:
 
     def insert_at_end(self, data):
         if self.head is None:
-            insert_beginning(data)
+            self.insert_beginning(data)
             return
         self.last_node.next_node = Node(data, None)
         self.last_node = self.last_node.next_node
+    
+    def get_user_by_id(self, user_id):
+        node = self.head
+        while node:
+            if node.data["id"] is int(user_id):
+                return node.data
+            node = node.next_node
 
-
-
+        return None
 
 

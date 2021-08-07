@@ -5,6 +5,7 @@ from sqlalchemy.engine import Engine
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from linked_list import *
+from hash_table import * 
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sqlitedb_user_blog.file"
@@ -29,7 +30,7 @@ class User(db.Model):
     email = db.Column(db.String(50))
     address = db.Column(db.String(200))
     phone = db.Column(db.String(50))
-    posts = db.relationship("BlogPost")
+    posts = db.relationship("BlogPost", cascade="all, delete")
 
 class BlogPost(db.Model):
     __tablename__ = "blog_post"
@@ -69,19 +70,66 @@ def get_all_users_descending():
 
 @app.route("/user/ascending_id", methods=["GET"])
 def get_all_users_ascending():
-    pass
+    users = User.query.all()
+    all_users_ll = LinkedList()
+    for user in users:
+        all_users_ll.insert_at_end({
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "address": user.address,
+            })
+    return jsonify(all_users_ll.to_list()), 200
 
 @app.route("/user/<user_id>", methods=["GET"])
 def get_one_user(user_id):
-    pass
+    users = User.query.all()
+    all_users_ll = LinkedList()
+    for user in users:
+        all_users_ll.insert_beginning(
+                {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "address": user.address,
+                    "phone": user.phone
+                    }
+                )
+    user = all_users_ll.get_user_by_id(user_id)
+    return jsonify(user), 200
 
 @app.route("/user/<user_id>", methods=["DELETE"])
 def delete_user(user_id):
-    pass
+    user = User.query.filter_by(id=user_id).first()
+    db.session.delete(user)
+    db.session.commit()
+    # status = "delete id " + str(user_id) + " success"
+    return jsonify({}), 200
 
 @app.route("/blog_post/<user_id>", methods=["POST"])
 def create_blog_post(user_id):
-    pass
+    data = request.get_json()
+    user = User.query.filter_by(id=user_id)
+    if not user:
+        return jsonify({"message": "user does not exist!"}), 400
+    
+    ht = HashTable(10)
+    ht.add_key_value("title", data["title"])
+    ht.add_key_value("body", data["body"])
+    ht.add_key_value("date", now)
+    ht.add_key_value("user_id", user_id)
+    ht.print_table()
+
+    new_blog_post = BlogPost(
+            title = ht.get_value("title"),
+            body = ht.get_value("body"),
+            date = ht.get_value("date"),
+            user_id = ht.get_value("user_id"),
+            )
+    db.session.add(new_blog_post)
+    db.session.commit()
+
+    return jsonify({"message": "new blog post created"}), 200
 
 @app.route("/user/<user_id>", methods=["GET"])
 def get_all_blog_posts(user_id):
